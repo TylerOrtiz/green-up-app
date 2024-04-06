@@ -1,5 +1,5 @@
 //  @flow
-import React, { useReducer } from "react";
+import React, { useReducer, useMemo } from "react";
 import {
     Alert,
     Keyboard,
@@ -16,10 +16,9 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import MiniMap from "@/components/mini-map";
-//import DateTimePicker from "react-native-modal-datetime-picker";
-// import DateTimePicker from '@react-native-community/datetimepicker';
 import DateTimePicker from "@react-native-community/datetimepicker"
 import moment from "moment";
+import { localeDate, localeTime } from '@/libs/datetime';
 import { defaultStyles } from "@/styles/default-styles";
 import Team from "@/models/team";
 import User from "@/models/user";
@@ -55,15 +54,15 @@ const styles = StyleSheet.create({...defaultStyles, ...myStyles});
 const dateRangeMessage = `${ moment(getCurrentGreenUpDay()).utc().format("dddd, MMM Do YYYY") } is the next Green Up Day, but teams may choose to work up to one week before or after.`;
 const freshState = (owner: UserType, team: ?TeamType, initialMapLocation: ?CoordinatesType = null): Object => ({
     team: Team.create(team || { owner }),
-    startDateTimePickerVisible: false,
-    endDateTimePickerVisible: false,
-    datePickerVisible: false,
     query: "",
     town: "",
     locations: [],
     date: null,
     end: null,
     startdate: null,
+    cleanDate: null,
+    cleanStartTime: null,
+    cleanEndTime: null,
     initialMapLocation
 });
 const setTime = (date: Date, time: string): Date => {
@@ -77,8 +76,6 @@ const setTime = (date: Date, time: string): Date => {
 
 function reducer(state: Object, action: Object): Object {
     switch (action.type) {
-        case "SET_STATE":
-            return { ...state, ...action.data };
         case "SET_TEAM_STATE":
             return { ...state, team: { ...state.team, ...action.data } };
         case "RESET_STATE":
@@ -96,9 +93,74 @@ type PropsType = {
     children: any
 };
 
-export const TeamDetailsForm = ({ currentUser, children, otherCleanAreas, team, onSave }: PropsType): React$Element<any> => {
+const cleanupDatePicker = "cleanupDatePicker";
+const cleanupStartTimePicker = "cleanupStartTimePicker";
+const cleanupEndTimePicker = "cleanupEndTimePicker";
 
+const initialDatepickerState = {
+    [cleanupDatePicker]: false,
+    [cleanupStartTimePicker]: false,
+    [cleanupEndTimePicker]: false,
+}
+
+const datepickerStateReducer = (state, action) => {
+    if (![cleanupDatePicker, cleanupStartTimePicker, cleanupEndTimePicker].includes(action?.data?.picker)) {
+        throw new Error("Invalid picker type");
+    }
+
+    switch (action.type) {
+        case "OPEN_PICKER":
+            return { ...state, [action.data.picker]: true };
+        case "CLOSE_PICKER":
+            return { ...state, [action.data.picker]: false };
+        default:
+            throw new Error("Invalid action type");
+    }
+}
+
+export const TeamDetailsForm = ({ currentUser, children, otherCleanAreas, team, onSave }: PropsType): React$Element<any> => {
+    const [datePickerState, dispatchDatePicker] = useReducer(datepickerStateReducer, initialDatepickerState);
     const [state, dispatch] = useReducer(reducer, freshState(currentUser, team));
+
+    const openDatePicker = (picker) => () => {
+        console.log('openDatePicker', picker);
+        dispatchDatePicker({ type: "OPEN_PICKER", data: { picker } });
+    }
+
+    const closeDatePicker = (picker) => () => {
+        console.log('closeDatePicker', picker);
+        dispatchDatePicker({ type: "CLOSE_PICKER", data: { picker } });
+    }
+
+    const startDateDisplay = useMemo(() => {
+        if (!state?.team?.cleanDate) {
+            return null;
+        }
+        const date = new Date(state.team.cleanDate);
+        return localeDate(date);
+        // previous property team.startdate
+        // new property team.cleanDate
+    }, [state.team.cleanDate]);
+
+    const startTimeDisplay = useMemo(() => {
+        if (!state?.team?.cleanStartTime) {
+            return null;
+        }
+        const date = new Date(state.team.cleanStartTime);
+        return localeTime(date);
+        // previous property team.date
+        // new property team.cleanStartTime
+    }, [state.team.cleanStartTime]);
+
+    const endTimeDisplay = useMemo(() => {
+        if (!state?.team?.cleanEndTime) {
+            return null;
+        }
+        const date = new Date(state.team.cleanEndTime);
+        return localeTime(date);
+        // previous property team.end
+        // new property team.cleanEndTime
+    }, [state.team.cleanEndTime]);
 
     const handleMapClick = (coordinates: Object) => {
         Keyboard.dismiss();
@@ -149,57 +211,60 @@ export const TeamDetailsForm = ({ currentUser, children, otherCleanAreas, team, 
         });
     };
 
-    const setState = (data: Object): (()=>void) => () => {
-        dispatch({
-            type: "SET_STATE",
-            data
-        });
-    };
-    
-    const onCleanDateChanged = (event: Event, pickedDate: Date) => {
-        switch (event.type) {
-            case "dismissed": {
-                setState({ datePickerVisible: false })();
+    const onCleanDateChanged = (event, pickedDate: Date) => {
+        const {
+            type,
+            nativeEvent: {timestamp, utcOffset},
+          } = event;
+
+        switch (type) {
+            case "dismissed":
+                closeDatePicker(cleanupDatePicker)
                 break;
-            }
-            case "set": {
-                console.log('cleanDateChanged', pickedTime);
-                setTeamValue("date")(pickedTime);
-                setTeamValue("cleanDate")(pickedTime);
-                setState({ datePickerVisible: false })();
+            case "set":
+                console.log('cleanDateChanged', pickedDate);
+                // setTeamValue("date")(pickedDate);
+                setTeamValue("cleanDate")(pickedDate);
+                closeDatePicker(cleanupDatePicker)
                 break;
-            }
         }
     };
 
-    const onCleanStartTimeChanged = (event: Event, date: Date) => {
-        switch(event.type) {
-            case "dismissed": {
-                setState({ startDateTimePickerVisible: false })();
+    const onCleanStartTimeChanged = (event, pickedTime: Date) => {
+        const {
+            type,
+            nativeEvent: {timestamp, utcOffset},
+          } = event;
+
+        switch(type) {
+            case "dismissed":
+                closeDatePicker(cleanupStartTimePicker)
                 break;
-            }
-            case "set": {
+            case "set":
                 console.log('cleanStartTimeChanged', pickedTime);
-                setTeamValue("startdate")(pickedTime);
+                // setTeamValue("startdate")(pickedTime);
                 setTeamValue("cleanStartTime")(pickedTime);
-                setState({ startDateTimePickerVisible: false })();
+                closeDatePicker(cleanupStartTimePicker)
                 break;
-            }
         }
     };
 
-    const onCleanEndTimeChanged = (event: Event, date: Date) => {
-        switch(event.type) {
-            case "dismissed": {
-                setState({ endDateTimePickerVisible: false })();
+    const onCleanEndTimeChanged = (event, pickedTime: Date) => {
+        const {
+            type,
+            nativeEvent: {timestamp, utcOffset},
+          } = event;
+
+        switch(type) {
+            case "dismissed":
+                closeDatePicker(cleanupEndTimePicker)
                 break;
-            }
-            case "set": {
+            case "set":
                 console.log('cleanEndTimeChanged', pickedTime);
-                setTeamValue("end")(pickedTime);
+                // setTeamValue("end")(pickedTime);
                 setTeamValue("cleanEndTime")(pickedTime);
-                setState({ endDateTimePickerVisible: false })();
-            }
+                closeDatePicker(cleanupEndTimePicker)
+                break;
         }
     };
 
@@ -333,13 +398,13 @@ export const TeamDetailsForm = ({ currentUser, children, otherCleanAreas, team, 
                             <View style={ styles.formControl }>
                                 <Text style={ styles.label }>{ "Which day will your team be cleaning?" }</Text>
                                 <View>
-                                    <TouchableOpacity onPress={ setState({ datePickerVisible: true }) }>
+                                    <TouchableOpacity onPress={openDatePicker(cleanupDatePicker)}>
                                         <Text
                                             style={ { ...styles.textInput, ...(dateIsSelected ? styles.selected : {}) } }>
-                                            { state.team.date || "Which day will your team be cleaning?" }
+                                            {startDateDisplay || "Which day will your team be cleaning?"}
                                         </Text>
                                     </TouchableOpacity>
-                                    { state.datePickerVisible && <DateTimePicker
+                                    { datePickerState[cleanupDatePicker] && <DateTimePicker
                                         mode="date"
                                         value={ eventDate }
                                         minimumDate={ minDate }
@@ -353,18 +418,17 @@ export const TeamDetailsForm = ({ currentUser, children, otherCleanAreas, team, 
                             <View style={ styles.formControl }>
                                 <Text style={ styles.label }>{ "What time will your team start?" }</Text>
                                 <View>
-                                    <TouchableOpacity onPress={ setState({ startDateTimePickerVisible: true }) }>
+                                    <TouchableOpacity onPress={openDatePicker(cleanupStartTimePicker)}>
                                         <Text
                                             style={ { ...styles.textInput, ...(startIsSelected ? styles.selected : {}) } }>
-                                            { state.team.startdate || "Pick a Starting Time" }
+                                            {startTimeDisplay || "Pick a Starting Time"}
                                         </Text>
                                     </TouchableOpacity>
-                                    { state.startDateTimePickerVisible && <DateTimePicker
+                                    {  datePickerState[cleanupStartTimePicker] && <DateTimePicker
                                         mode="time"
                                         value={ defaultStartTime }
-                                        onChange={(evt, date) => onCleanStartTimeChanged(evt, date)}
-                                        onError={ setState({ startDateTimePickerVisible: false }) }
-                                        is24Hour={ true }
+                                        onChange={onCleanStartTimeChanged}
+                                        is24Hour={ false }
                                         titleIOS={ "Pick a starting time." }
                                         titleStyle={ styles.datePickerTitleStyle }
                                     /> }
@@ -373,20 +437,17 @@ export const TeamDetailsForm = ({ currentUser, children, otherCleanAreas, team, 
                             <View style={ styles.formControl }>
                                 <Text style={ styles.label }>{ "What time will your team end?" }</Text>
                                 <View>
-                                    <TouchableOpacity onPress={ setState({ endDateTimePickerVisible: true }) }>
+                                    <TouchableOpacity onPress={openDatePicker(cleanupEndTimePicker)}>
                                         <Text
                                             style={ { ...styles.textInput, ...(endIsSelected ? styles.selected : {}) } }>
-                                            { state.team.end || "Pick an Ending Time" }
+                                            {endTimeDisplay || "Pick an Ending Time"}
                                         </Text>
                                     </TouchableOpacity>
-                                    { state.endDateTimePickerVisible && <DateTimePicker
+                                    {  datePickerState[cleanupEndTimePicker] && <DateTimePicker
                                         mode="time"
                                         value={ defaultEndTime }
-                                        display={ state.endDateTimePickerVisible }
-                                        // onChange={ handleEndDatePicked }
-                                        onChange={(evt, date) => onCleanEndTimeChanged(evt, date)}
-                                        onError={ setState({ endDateTimePickerVisible: false }) }
-                                        is24Hour={ true }
+                                        onChange={onCleanEndTimeChanged}
+                                        is24Hour={ false }
                                         titleIOS={ "Pick an ending time." }
                                         titleStyle={ styles.datePickerTitleStyle }
                                     /> }

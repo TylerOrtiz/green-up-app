@@ -21,7 +21,7 @@ if (!global.atob) {
     global.atob = decode;
 }
 // Some versions of Firebase assume access to a Window object that react-native does not have
-window.addEventListener = x => x;
+
 
 // Stop annoying Android users with useless warnings.
 // LogBox.ignoreLogs(["Setting a timer for a long period of time", "getNode", "old version of react-navigation library"]);
