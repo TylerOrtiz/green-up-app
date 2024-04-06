@@ -11,7 +11,6 @@ import {
     KeyboardAvoidingView, TouchableWithoutFeedback
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { fixAndroidTime } from "../../libs/fix-android-time";
 import MiniMap from "../../components/mini-map";
 import { bindActionCreators } from "redux";
 import { connect } from "react-redux";
@@ -201,51 +200,50 @@ const setState = (data: Object): (() => void) => () => {
 };
 
 const onCleanDateChanged = (event: Event, pickedDate: Date) => {
-    console.log("onCleanDateChanged:", event, pickedDate)
-    if (event.type === "dismissed") {
-        setState({ datePickerVisible: false })();
-        return
+    switch(event.type) {
+        case "dismissed": {
+            setState({ datePickerVisible: false })();
+            break;
+        }
+        case "set": {
+            console.log('cleanDateChanged', pickedTime);
+            setTeamValue("date")(pickedTime);
+            setTeamValue("cleanDate")(pickedTime);
+            setState({ datePickerVisible: false })();
+            break;
+        }
     }
-
-    const arr = pickedDate.toString().split(" ");
-    const date = `${arr[0]} ${arr[1]} ${arr[2]} ${arr[3]}`;
-
-    setTeamValue("date")(date);
-    setTeamValue("cleanDate")(pickedDate);
-    setState({ datePickerVisible: false })();
 };
 
 const onCleanStartTimeChanged = (event: Event, pickedTime: Date) => {
-    console.log("onCleanStartTimeChanged:", event, pickedTime)
-    if (event.type === "dismissed") {
-        setState({ startDateTimePickerVisible: false })();
-        return
+    switch(event.type) {
+        case "dismissed": {
+            setState({ startDateTimePickerVisible: false })();
+            break;
+        }
+        case "set": {
+            console.log('cleanStartTimeChanged', pickedTime);
+            setTeamValue("startdate")(pickedTime);
+            setTeamValue("cleanStartTime")(pickedTime);
+            setState({ startDateTimePickerVisible: false })();
+            break;
+        }
     }
-    let start = pickedTime.toLocaleTimeString("en-US", { hour12: true, hour: "2-digit", minute: "2-digit" });
-    if (Platform.OS === "android") {
-        start = fixAndroidTime(start);
-    }
-
-    setTeamValue("startdate")(start);
-    setTeamValue("cleanStartTime")(pickedTime);
-    setState({ startDateTimePickerVisible: false })();
 };
 
 const onCleanEndTimeChanged = (event: Event, pickedTime: Date) => {
-    console.log("onCleanEndTimeChanged:", event, pickedTime)
-    if (event.type === "dismissed") {
-        setState({ endDateTimePickerVisible: false })();
-        return
+    switch(event.type) {
+        case "dismissed": {
+            setState({ endDateTimePickerVisible: false })();
+            break;
+        }
+        case "set": {
+            console.log('cleanEndTimeChanged', pickedTime);
+            setTeamValue("end")(pickedTime);
+            setTeamValue("cleanEndTime")(pickedTime);
+            setState({ endDateTimePickerVisible: false })();
+        }
     }
-
-    let end = pickedTime.toLocaleTimeString("en-US", { hour12: true, hour: "2-digit", minute: "2-digit" });
-    if (Platform.OS === "android") {
-        end = fixAndroidTime(end);
-    }
-
-    setTeamValue("end")(end);
-    setTeamValue("cleanEndTime")(pickedTime);
-    setState({ endDateTimePickerVisible: false })();
 };
 
 // DateTimePicker

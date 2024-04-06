@@ -15,7 +15,6 @@ import {
     TextInput
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { fixAndroidTime } from "@/libs/fix-android-time";
 import MiniMap from "@/components/mini-map";
 //import DateTimePicker from "react-native-modal-datetime-picker";
 // import DateTimePicker from '@react-native-community/datetimepicker';
@@ -156,57 +155,51 @@ export const TeamDetailsForm = ({ currentUser, children, otherCleanAreas, team, 
             data
         });
     };
-
-    const handleDatePicked = (event: Event, pickedDate: Date) => {
-        const arr = pickedDate.toString().split(" ");
-        const date = `${ arr[0] } ${ arr[1] } ${ arr[2] } ${ arr[3] }`;
-        setTeamValue("date")(date);
-        setState({ datePickerVisible: false })();
-    };
-
-    const handleStartDatePicked = (event: Event, date: Date) => {
-        if (event.type == "set") {
-            console.log("Time Set");
-            let newstart = date.toLocaleTimeString("en-GB"); // date.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit" });
-            let start = null;
-            console.log("Platform", Platform.OS);
-            if (Platform.OS === "android") {
-                console.log("new start", newstart);
-                start = newstart.split(":")[0] + ":" + newstart.split(":")[1]
-                console.log("fixed new start", start);
+    
+    const onCleanDateChanged = (event: Event, pickedDate: Date) => {
+        switch (event.type) {
+            case "dismissed": {
+                setState({ datePickerVisible: false })();
+                break;
             }
-            else {
-                start = newstart;
+            case "set": {
+                console.log('cleanDateChanged', pickedTime);
+                setTeamValue("date")(pickedTime);
+                setTeamValue("cleanDate")(pickedTime);
+                setState({ datePickerVisible: false })();
+                break;
             }
-            console.log("cleaned new start: " + start);
-            setTeamValue("startdate")(start);
-            setState({ startDateTimePickerVisible: false })();
-        }
-        if (event.type == "dismissed") {
-            console.log("Time Dismissed");
         }
     };
 
-    const handleEndDatePicked = (event: Event, date: Date) => {
-        if (event.type == "set") {
-            console.log("Time Set");
-            let newend = date.toLocaleTimeString("en-GB"); // date.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit" });
-            let end = null;
-            console.log("Platform", Platform.OS);
-            if (Platform.OS === "android") {
-                console.log("new end", newend);
-                end = newend.split(":")[0] + ":" + newend.split(":")[1]
-                console.log("fixed new end", end);
+    const onCleanStartTimeChanged = (event: Event, date: Date) => {
+        switch(event.type) {
+            case "dismissed": {
+                setState({ startDateTimePickerVisible: false })();
+                break;
             }
-            else {
-                end = newend;
+            case "set": {
+                console.log('cleanStartTimeChanged', pickedTime);
+                setTeamValue("startdate")(pickedTime);
+                setTeamValue("cleanStartTime")(pickedTime);
+                setState({ startDateTimePickerVisible: false })();
+                break;
             }
-            console.log("cleaned new end: " + end);
-            setTeamValue("end")(end);
-            setState({ endDateTimePickerVisible: false })();
         }
-        if (event.type == "dismissed") {
-            console.log("Time Dismissed");
+    };
+
+    const onCleanEndTimeChanged = (event: Event, date: Date) => {
+        switch(event.type) {
+            case "dismissed": {
+                setState({ endDateTimePickerVisible: false })();
+                break;
+            }
+            case "set": {
+                console.log('cleanEndTimeChanged', pickedTime);
+                setTeamValue("end")(pickedTime);
+                setTeamValue("cleanEndTime")(pickedTime);
+                setState({ endDateTimePickerVisible: false })();
+            }
         }
     };
 
@@ -351,8 +344,7 @@ export const TeamDetailsForm = ({ currentUser, children, otherCleanAreas, team, 
                                         value={ eventDate }
                                         minimumDate={ minDate }
                                         maximumDate={ maxDate }
-                                        onChange={ handleDatePicked }
-                                        onCancel={ setState({ datePickerVisible: false }) }
+                                        onChange={onCleanDateChanged}
                                         titleIOS={ "Which day is your team cleaning?" }
                                         titleStyle={ styles.datePickerTitleStyle }
                                     /> }
@@ -370,7 +362,7 @@ export const TeamDetailsForm = ({ currentUser, children, otherCleanAreas, team, 
                                     { state.startDateTimePickerVisible && <DateTimePicker
                                         mode="time"
                                         value={ defaultStartTime }
-                                        onChange={ handleStartDatePicked }
+                                        onChange={(evt, date) => onCleanStartTimeChanged(evt, date)}
                                         onError={ setState({ startDateTimePickerVisible: false }) }
                                         is24Hour={ true }
                                         titleIOS={ "Pick a starting time." }
@@ -391,7 +383,8 @@ export const TeamDetailsForm = ({ currentUser, children, otherCleanAreas, team, 
                                         mode="time"
                                         value={ defaultEndTime }
                                         display={ state.endDateTimePickerVisible }
-                                        onChange={ handleEndDatePicked }
+                                        // onChange={ handleEndDatePicked }
+                                        onChange={(evt, date) => onCleanEndTimeChanged(evt, date)}
                                         onError={ setState({ endDateTimePickerVisible: false }) }
                                         is24Hour={ true }
                                         titleIOS={ "Pick an ending time." }
