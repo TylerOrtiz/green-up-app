@@ -42,7 +42,13 @@ export const teamsReducers = (state: Object = initialState.teams, action: Action
                 ...state,
                 teams: action.data
             };
-
+        case types.SAVE_TEAM_SUCCESS:
+            return {
+                ...state,
+                teams: state.teams.map(team => 
+                    team.id === action.data.id ? action.data : team
+                )
+            };
         case types.SET_SELECTED_TEAM_VALUE: {
             const newSelectedTeam = Object.assign({}, state.selectedTeam);
             newSelectedTeam[(action.data || {}).key] = (action.data || {}).value;

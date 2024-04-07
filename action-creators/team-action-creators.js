@@ -145,7 +145,7 @@ export const saveTeam = (team: Object): ThunkType => {
     function thunk(dispatch: Dispatch<ActionType>) {
         firebaseDataLayer.saveTeam(team)
             .then((savedTeam: TeamType) => {
-                dispatch({ type: types.SAVE_TEAM_SUCCESS, savedTeam });
+                dispatch({ type: types.SAVE_TEAM_SUCCESS, data: savedTeam });
             })
             .catch((error: Error) => {
                 dispatch({ type: types.SAVE_TEAM_FAIL, error });

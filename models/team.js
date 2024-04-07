@@ -75,15 +75,9 @@ export default class Team {
         this.townId = typeof args.townId === "string"
             ? args.townId
             : null;
-        this.cleanDate = typeof args.cleanDate === "string"
-            ? new Date(args.cleanDate)
-            : null;
-        this.cleanStartTime = typeof args.cleanStartTime === "string"
-            ? new Date(args.cleanStartTime)
-            : null;
-        this.cleanEndTime = typeof args.cleanEndTime === "string"
-            ? new Date(args.cleanEndTime)
-            : null;
+        this.cleanDate = args.cleanDate
+        this.cleanStartTime = args.cleanStartTime
+        this.cleanEndTime = args.cleanEndTime
     }
 
     static create(args: Object = {}, id?: string): TeamType {

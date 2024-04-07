@@ -951,11 +951,21 @@ export async function createTeam(team: Object = {}, user: ?Object = {}, dispatch
 
 export function saveTeam(team: TeamType): Promise<any> {
     const _team = deconstruct({ ...team, owner: { ...team.owner } });
+    const teamRef = doc(firestore, `teams/${ team.id }`);
     return setDoc(
-        //doc(firestore, `teams/${ team.id }`, docRef.id),
-        doc(firestore, `teams/${ team.id }`),
+        teamRef,
         _team
-    )
+    ).then(() => getDoc(teamRef))
+    .then((docSnapshot) => {
+        if (!docSnapshot.exists()) {
+            throw new Error('Document does not exist');
+        }
+        return docSnapshot.data();
+    })
+    .catch((error) => {
+        console.error('Error saving team:', error);
+        throw error;
+    });
     // return db.collection("teams").doc(team.id).set(_team);
 }
 

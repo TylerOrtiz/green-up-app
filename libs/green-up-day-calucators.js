@@ -100,3 +100,10 @@ export const isInGreenUpWindow = (date: ?Date) => {
     // return afterStart && beforeEnd;
 };
 
+export const getCurrentDate = () => new Date();
+
+export const applyDateOffset = (date: Date, days: number): Date => {
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
+};

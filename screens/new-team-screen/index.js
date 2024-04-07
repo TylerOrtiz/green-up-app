@@ -73,6 +73,9 @@ const freshState = (owner: UserType, initialMapLocation: ?CoordinatesType = null
     date: getCurrentGreenUpDay(),
     end: null,
     startdate: null,
+    cleanDate: getCurrentGreenUpDay(),
+    cleanStartTime: null,
+    cleanEndTime: null,
     initialMapLocation
 });
 const setTime = (date: Date, time: string): Date => {
@@ -190,17 +193,17 @@ const NewTeam = ({ actions, currentUser, otherCleanAreas, navigation }) => {
             type: "SET_TEAM_STATE",
             data: { [key]: value }
         });
-    };
+    }
 
 const setState = (data: Object): (() => void) => () => {
     dispatch({
         type: "SET_STATE",
         data
     });
-};
+}
 
 const onCleanDateChanged = (event: Event, pickedDate: Date) => {
-    switch(event.type) {
+    switch (event.type) {
         case "dismissed": {
             setState({ datePickerVisible: false })();
             break;
@@ -216,7 +219,7 @@ const onCleanDateChanged = (event: Event, pickedDate: Date) => {
 };
 
 const onCleanStartTimeChanged = (event: Event, pickedTime: Date) => {
-    switch(event.type) {
+    switch (event.type) {
         case "dismissed": {
             setState({ startDateTimePickerVisible: false })();
             break;
@@ -232,7 +235,7 @@ const onCleanStartTimeChanged = (event: Event, pickedTime: Date) => {
 };
 
 const onCleanEndTimeChanged = (event: Event, pickedTime: Date) => {
-    switch(event.type) {
+    switch (event.type) {
         case "dismissed": {
             setState({ endDateTimePickerVisible: false })();
             break;
@@ -387,7 +390,7 @@ return (
                                     value={eventDate}
                                     minimumDate={minDate}
                                     maximumDate={maxDate}
-                                    onChange={(evt, date) => onCleanDateChanged(evt, date)}
+                                    onChange={onCleanDateChanged}
                                     onError={setState({ datePickerVisible: false })}
                                     titleIOS={"Which day is your team cleaning?"}
                                     titleStyle={styles.datePickerTitleStyle}
@@ -410,7 +413,7 @@ return (
                                 <DateTimePicker
                                     mode="time"
                                     value={defaultStartTime}
-                                    onChange={(evt, date) => onCleanStartTimeChanged(evt, date)}
+                                    onChange={onCleanStartTimeChanged}
                                     onError={setState({ startDateTimePickerVisible: false })}
                                     is24Hour={false}
                                     titleIOS={"Pick a starting time."}
@@ -433,7 +436,7 @@ return (
                                 <DateTimePicker
                                     mode="time"
                                     value={defaultEndTime}
-                                    onChange={(evt, date) => onCleanEndTimeChanged(evt, date)}
+                                    onChange={onCleanEndTimeChanged}
                                     onError={setState({ endDateTimePickerVisible: false })}
                                     is24Hour={false}
                                     titleIOS={"Pick an ending time."}
