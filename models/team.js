@@ -6,7 +6,7 @@ import uuid from "uuid";
 import { getCurrentGreenUpDay } from "../libs/green-up-day-calucators";
 import moment from "moment";
 
-const defaultDate = moment(getCurrentGreenUpDay()).utc().format("dddd, MMMM Do YYYY");
+const defaultDate = moment(getCurrentGreenUpDay()).utc().toDate()//.format("dddd, MMMM Do YYYY");
 
 export default class Team {
     active: ?boolean;
@@ -31,19 +31,20 @@ export default class Team {
 
 
     constructor(args: Object = {}) {
+        console.log("ARGS TO TEAM CONSTRUCTOR", args)
         this.active = typeof args.active === "boolean"
             ? args.active
             : true;
         this.created = isValidDate(new Date(args.created))
             ? new Date(args.created)
             : new Date();
-        this.date = typeof args.date === "string"
+        this.date = isValidDate(new Date(args.date))
             ? args.date
             : defaultDate;
         this.description = typeof args.description === "string"
             ? args.description
             : null;
-        this.end = typeof args.end === "string"
+        this.end = isValidDate(new Date(args.end))
             ? args.end
             : null;
         this.id = typeof args.id === "string" ? args.id : null;
@@ -69,15 +70,21 @@ export default class Team {
             ? args.notes
             : null;
         this.owner = TeamMember.create(args.owner);
-        this.startdate = typeof args.startdate === "string"
+        this.startdate = isValidDate(new Date(args.startdate))
             ? args.startdate
             : null;
         this.townId = typeof args.townId === "string"
             ? args.townId
             : null;
-        this.cleanDate = args.cleanDate
-        this.cleanStartTime = args.cleanStartTime
-        this.cleanEndTime = args.cleanEndTime
+        this.cleanDate = isValidDate(new Date(args.cleanDate))
+            ? new Date(args.cleanDate)
+            : null;
+        this.cleanStartTime = isValidDate(new Date(args.cleanStartTime))
+            ? new Date(args.cleanStartTime)
+            : null;
+        this.cleanEndTime = isValidDate(new Date(args.cleanEndTime))
+            ? new Date(args.cleanEndTime)
+            : null;
     }
 
     static create(args: Object = {}, id?: string): TeamType {
